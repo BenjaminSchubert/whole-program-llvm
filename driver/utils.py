@@ -139,6 +139,9 @@ class ArgumentListFilter(object):
             '-iquote' : (1, ArgumentListFilter.compileBinaryCallback),
             '-imultilib' : (1, ArgumentListFilter.compileBinaryCallback),
 
+            # mllvm
+            '-mllvm': (1, ArgumentListFilter.compileBinaryCallback),
+
             # Language
             '-ansi' : (0, ArgumentListFilter.compileUnaryCallback),
             '-x' : (1, ArgumentListFilter.compileBinaryCallback),

@@ -55,9 +55,15 @@ class BaseDriverTest(unittest.TestCase):
         """
         Launches cmd with environment and in test_output_directory
         :param cmd: command to launch
-        :return: the subprocess instance
+        :return: the command's output
         """
-        return subprocess.Popen(cmd, shell=True, env=self.env, cwd=test_output_directory)
+        try:
+            return subprocess.check_output(
+                cmd, shell=True, stderr=subprocess.STDOUT,  env=self.env, cwd=test_output_directory
+            ).decode("utf-8")
+        except subprocess.CalledProcessError as error:
+            print(error.output.decode("utf-8"))
+            raise error
 
     def create_objects(self):
         """
@@ -65,7 +71,7 @@ class BaseDriverTest(unittest.TestCase):
         :return:
         """
         for f in ["foo.c", "bar.c", "baz.c", "main.c"]:
-            self.assertEqual(self.launch_proc("${{CC}} {dir}/{f} -c".format(dir=test_files_directory, f=f)).wait(), 0)
+            self.assertEqual(self.launch_proc("${{CC}} {dir}/{f} -c".format(dir=test_files_directory, f=f)), u'')
 
     def create_archive(self):
         """
@@ -73,7 +79,7 @@ class BaseDriverTest(unittest.TestCase):
         :return:
         """
         proc1 = self.launch_proc("ar cr libfoo.a foo.o bar.o baz.o")
-        self.assertEqual(proc1.wait(), 0)
+        self.assertEqual(proc1, u'')
 
     def test_can_compile_simple_file(self):
         """
@@ -81,7 +87,7 @@ class BaseDriverTest(unittest.TestCase):
         :return:
         """
         proc = self.launch_proc("${{CXX}} -o hello {}/hello.cc".format(test_files_directory))
-        self.assertEqual(proc.wait(), 0)
+        self.assertEqual(proc, u'')
 
     def test_can_compile_multiple_file_in_one_object(self):
         """
@@ -91,7 +97,7 @@ class BaseDriverTest(unittest.TestCase):
         proc = self.launch_proc(
             "${{CC}} {dir}/foo.c {dir}/bar.c {dir}/baz.c {dir}/main.c -o main".format(dir=test_files_directory)
         )
-        self.assertEqual(proc.wait(), 0)
+        self.assertEqual(proc, u'')
 
     def test_can_compile_and_link_multiple_object(self):
         """
@@ -101,10 +107,10 @@ class BaseDriverTest(unittest.TestCase):
         proc1 = self.launch_proc(
             "${{CC}} {dir}/foo.c {dir}/bar.c {dir}/baz.c {dir}/main.c -c".format(dir=test_files_directory)
         )
-        self.assertEqual(proc1.wait(), 0)
+        self.assertEqual(proc1, u'')
 
         proc2 = self.launch_proc("${CC} foo.o bar.o baz.o main.o -o main")
-        self.assertEqual(proc2.wait(), 0)
+        self.assertEqual(proc2, u'')
 
     def test_can_compile_and_link_object_and_source_object(self):
         """
@@ -112,10 +118,10 @@ class BaseDriverTest(unittest.TestCase):
         :return:
         """
         proc1 = self.launch_proc("${{CC}} {dir}/foo.c {dir}/bar.c -c".format(dir=test_files_directory))
-        self.assertEqual(proc1.wait(), 0)
+        self.assertEqual(proc1, u'')
 
         proc2 = self.launch_proc("${{CC}} foo.o bar.o {dir}/baz.c {dir}/main.c -o main".format(dir=test_files_directory))
-        self.assertEqual(proc2.wait(), 0)
+        self.assertEqual(proc2, u'')
 
     def test_can_link_multiple_objects_together(self):
         """
@@ -124,7 +130,7 @@ class BaseDriverTest(unittest.TestCase):
         """
         self.create_objects()
         proc = self.launch_proc("${CC} foo.o bar.o baz.o main.o -o main")
-        self.assertEqual(proc.wait(), 0)
+        self.assertEqual(proc, u'')
 
     def test_can_create_archive_from_object_created(self):
         """
@@ -135,7 +141,7 @@ class BaseDriverTest(unittest.TestCase):
         self.create_archive()
 
         proc2 = self.launch_proc("ranlib libfoo.a")
-        self.assertEqual(proc2.wait(), 0)
+        self.assertEqual(proc2, u'')
 
     def test_can_create_dynamic_library_from_objects(self):
         """
@@ -144,7 +150,7 @@ class BaseDriverTest(unittest.TestCase):
         """
         self.create_objects()
         proc = self.launch_proc("${CC} -dynamiclib foo.o bar.o baz.o main.o -o libfoo.dylib")
-        self.assertEqual(proc.wait(), 0)
+        self.assertEqual(proc, u'')
 
     def test_can_deadstrip_dynamic_library(self):
         """
@@ -153,7 +159,7 @@ class BaseDriverTest(unittest.TestCase):
         """
         self.create_objects()
         proc = self.launch_proc("${CC} -dynamiclib -Wl,-dead_strip foo.o bar.o baz.o main.o -o libfoo.dylib")
-        self.assertEqual(proc.wait(), 0)
+        self.assertEqual(proc, u'')
 
     def test_can_link_with_archive(self):
         """
@@ -164,7 +170,13 @@ class BaseDriverTest(unittest.TestCase):
         self.create_archive()
 
         proc = self.launch_proc("${CC} main.o libfoo.a -o main.arch")
-        self.assertEqual(proc.wait(), 0)
+        self.assertEqual(proc, u'')
+
+    def test_can_handle_mllvm_argument(self):
+        proc = self.launch_proc(
+            "${{CXX}} -mllvm -force-vector-width=4 -o hello {}/hello.cc".format(test_files_directory)
+        )
+        self.assertEqual(proc, u'')
 
 
 if __name__ == '__main__':

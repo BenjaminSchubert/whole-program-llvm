@@ -22,6 +22,6 @@ class DragonEggDriverTest(BaseDriverTest):
         env["LLVM_COMPILER"] = "dragonegg"
         env["PATH"] = "{}:{}".format(root_directory, os.environ["PATH"])
         # FIXME find dragonegg path generically
-        env["LLVM_DRAGONEGG_PLUGIN"] = "/usr/lib/gcc/x86_64-linux-gnu/4.7/plugin/dragonegg.so"
+        env["LLVM_DRAGONEGG_PLUGIN"] = "/usr/lib/gcc/x86_64-linux-gnu/4.8/plugin/dragonegg.so"
         env["LLVM_GCC_PREFIX"] = "llvm-"
         return env
