@@ -230,6 +230,7 @@ class ArgumentListFilter(object):
             r'^-W(?!l,).*$' : (0, ArgumentListFilter.compileUnaryCallback),
             r'^-f.+$' : (0, ArgumentListFilter.compileUnaryCallback),
             r'^-std=.+$' : (0, ArgumentListFilter.compileUnaryCallback),
+            r'^-fsanitize=.+$' : (0, ArgumentListFilter.compileAndLinkCallback),
         }
 
         #iam: try and keep track of the files, input object, and output
@@ -333,6 +334,10 @@ class ArgumentListFilter(object):
 
     def compileUnaryCallback(self, flag):
         self.compileArgs.append(flag)
+
+    def compileAndLinkCallback(self, flag):
+        self.compileArgs.append(flag)
+        self.linkArgs.append(flag)
 
     def darwinWarningLinkUnaryCallback(self, flag):
         if sys.platform.startswith('darwin'):
